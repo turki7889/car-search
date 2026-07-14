@@ -1,27 +1,94 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* === Feminine Luxe Palette === */
+  --color-rose: #c4717a;
+  --color-rose-dark: #a85d65;
+  --color-rose-light: #e8b4b8;
+  --color-rose-pale: #f9e4e7;
+
+  --color-blush: #f4c2c2;
+  --color-blush-light: #fde8ec;
+  --color-blush-surface: #fff0f3;
+
+  --color-gold: #d4a574;
+  --color-gold-light: #e8cdb0;
+  --color-gold-pale: #faf3eb;
+
+  --color-cream: #fff5ee;
+  --color-cream-dark: #f5e6dc;
+
+  --color-deep-rose: #6b3347;
+  --color-deep-rose-light: #8b4a62;
+
+  --color-muted-rose: #b08b97;
+  --color-muted-light: #d4c0c7;
+
+  --color-bg: #fffaf8;
+  --color-surface: #ffffff;
+
+  --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1.25rem;
+  --radius-button: 9999px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* === Base === */
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-deep-rose);
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* === Scrollbar Feminine === */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-blush-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-rose-light);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-rose);
+}
+
+/* === Selection === */
+::selection {
+  background: var(--color-rose-pale);
+  color: var(--color-deep-rose);
+}
+
+/* === Utilities === */
+@utility divider-rose {
+  width: 64px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-rose),
+    var(--color-rose-light)
+  );
+  border-radius: 2px;
+}
+
+@utility card-feminine {
+  background: var(--color-surface);
+  border: 1px solid var(--color-blush-light);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 3px rgba(107, 51, 71, 0.04),
+    0 8px 20px rgba(183, 110, 121, 0.06);
+}
+
+@utility btn-primary-fem {
+  background: linear-gradient(135deg, var(--color-rose), var(--color-rose-dark));
+  color: white;
+  border-radius: var(--radius-button);
+  box-shadow: 0 2px 12px rgba(196, 113, 122, 0.25),
+    0 8px 24px rgba(196, 113, 122, 0.12);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }

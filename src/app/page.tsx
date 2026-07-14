@@ -1,100 +1,233 @@
-import Image from "next/image";
+"use client";
+
+import { useState, FormEvent } from "react";
+import SearchResults from "./components/SearchResults";
+
+interface SearchResult {
+  title: string;
+  url: string;
+  description: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [carType, setCarType] = useState("");
+  const [specs, setSpecs] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [color, setColor] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [error, setError] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const buildQuery = (): string => {
+    const parts: string[] = [];
+    if (carType.trim()) parts.push(carType.trim());
+    if (specs.trim()) parts.push(specs.trim());
+    if (color.trim()) parts.push(color.trim());
+
+    let query = parts.join(" ") || "سيارة";
+    if (minPrice || maxPrice) {
+      if (minPrice && maxPrice) {
+        query += ` السعر من ${minPrice} إلى ${maxPrice} ريال`;
+      } else if (minPrice) {
+        query += ` السعر من ${minPrice} ريال`;
+      } else {
+        query += ` السعر حتى ${maxPrice} ريال`;
+      }
+    }
+    return query;
+  };
+
+  const handleSearch = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSearched(true);
+
+    try {
+      const query = buildQuery();
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!res.ok) {
+        throw new Error("حدث خطأ في البحث. حاولي مرة أخرى.");
+      }
+
+      const data = await res.json();
+      setResults(data.results || []);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "حدث خطأ غير متوقع. حاولي مرة أخرى."
+      );
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-bg">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blush-light/20 blur-3xl" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gold-pale/30 blur-3xl" />
+        <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] rounded-full bg-rose-pale/15 blur-3xl" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-3xl mx-auto px-4 py-12 sm:py-20">
+        {/* Header */}
+        <header className="text-center mb-12">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-deep-rose mb-4">
+            بحث السيارات <span className="inline-block animate-bounce">✨</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-muted-rose max-w-xl mx-auto leading-relaxed">
+            محرك بحثكِ الشخصي للسيارات في السعودية. اكتبي النوع والمواصفات
+            وسنجد لكِ أفضل النتائج.
+          </p>
+          <div className="divider-rose mx-auto mt-6" />
+        </header>
+
+        {/* Search Form Card */}
+        <div className="card-feminine p-6 sm:p-8 mb-10">
+          <form onSubmit={handleSearch} className="space-y-5">
+            {/* Car Type */}
+            <div>
+              <label
+                htmlFor="carType"
+                className="block text-sm font-semibold text-deep-rose mb-2"
+              >
+                🚗 نوع السيارة
+              </label>
+              <input
+                id="carType"
+                type="text"
+                value={carType}
+                onChange={(e) => setCarType(e.target.value)}
+                placeholder='مثال: "كامري"، "لاندكروزر"، "أكسنت"'
+                className="w-full px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+              />
+            </div>
+
+            {/* Specs */}
+            <div>
+              <label
+                htmlFor="specs"
+                className="block text-sm font-semibold text-deep-rose mb-2"
+              >
+                ⚙️ المواصفات
+              </label>
+              <input
+                id="specs"
+                type="text"
+                value={specs}
+                onChange={(e) => setSpecs(e.target.value)}
+                placeholder='مثال: "فتحة سقف، كاميرا خلفية، مثبت سرعة"'
+                className="w-full px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+              />
+            </div>
+
+            {/* Price Range */}
+            <div>
+              <label className="block text-sm font-semibold text-deep-rose mb-2">
+                💰 نطاق السعر (ريال)
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="number"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder="من"
+                  className="flex-1 px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+                />
+                <span className="flex items-center text-muted-rose font-medium px-2">
+                  —
+                </span>
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="إلى"
+                  className="flex-1 px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Color */}
+            <div>
+              <label
+                htmlFor="color"
+                className="block text-sm font-semibold text-deep-rose mb-2"
+              >
+                🎨 اللون
+              </label>
+              <input
+                id="color"
+                type="text"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                placeholder='مثال: "أبيض"، "أسود"، "أحمر"'
+                className="w-full px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary-fem w-full py-4 text-lg disabled:opacity-60 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.985]"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  جاري البحث...
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  🔍 بحث
+                </span>
+              )}
+            </button>
+          </form>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* Results Section */}
+        {searched && (
+          <SearchResults
+            results={results}
+            loading={loading}
+            error={error}
+            query={buildQuery()}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 text-center pb-8 text-muted-rose text-sm">
+        <p>صُنع بـ 💗 لـ رباب</p>
       </footer>
     </div>
   );
