@@ -6,11 +6,23 @@ interface SearchResult {
   description: string;
 }
 
+interface SearchStats {
+  totalResults: number;
+  beforeFilter: number;
+  afterFilter: number;
+  filtersApplied: {
+    price: boolean;
+    model: boolean;
+    color: boolean;
+  };
+}
+
 interface SearchResultsProps {
   results: SearchResult[];
   loading: boolean;
   error: string;
   query: string;
+  stats?: SearchStats | null;
 }
 
 export default function SearchResults({
@@ -18,6 +30,7 @@ export default function SearchResults({
   loading,
   error,
   query,
+  stats,
 }: SearchResultsProps) {
   if (loading) {
     return (
@@ -56,11 +69,56 @@ export default function SearchResults({
     );
   }
 
+  // إنشاء قائمة الفلاتر المطبقة
+  const activeFilters: string[] = [];
+  if (stats?.filtersApplied) {
+    if (stats.filtersApplied.price) activeFilters.push("💰 السعر");
+    if (stats.filtersApplied.model) activeFilters.push("📅 الموديل");
+    if (stats.filtersApplied.color) activeFilters.push("🎨 اللون");
+  }
+
+  const wasFiltered =
+    stats && stats.beforeFilter > 0 && stats.afterFilter !== stats.beforeFilter;
+
   return (
     <section className="space-y-4">
-      <p className="text-sm text-muted-rose mb-4">
-        تم العثور على {results.length} نتيجة لـ &quot;{query}&quot;
-      </p>
+      {/* إحصائيات النتائج */}
+      <div className="card-feminine p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p className="text-sm text-muted-rose">
+          <span className="font-semibold text-deep-rose">
+            {results.length}
+          </span>{" "}
+          نتيجة لـ{" "}
+          <span className="font-medium text-deep-rose">&quot;{query}&quot;</span>
+        </p>
+
+        {wasFiltered && (
+          <p className="text-xs text-muted-rose/80">
+            (تمت فلترة{" "}
+            <span className="font-medium text-gold">
+              {stats.beforeFilter - stats.afterFilter}
+            </span>{" "}
+            نتيجة من أصل{" "}
+            <span className="font-medium">{stats.beforeFilter}</span>)
+          </p>
+        )}
+      </div>
+
+      {/* الفلاتر النشطة */}
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {activeFilters.map((filter, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blush-light/30 text-deep-rose border border-rose-light/30"
+            >
+              {filter}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* قائمة النتائج */}
       {results.map((result, index) => (
         <a
           key={index}

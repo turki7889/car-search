@@ -9,6 +9,17 @@ interface SearchResult {
   description: string;
 }
 
+interface SearchStats {
+  totalResults: number;
+  beforeFilter: number;
+  afterFilter: number;
+  filtersApplied: {
+    price: boolean;
+    model: boolean;
+    color: boolean;
+  };
+}
+
 export default function Home() {
   const [carType, setCarType] = useState("");
   const [model, setModel] = useState("");
@@ -20,59 +31,66 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState("");
-
-  const buildQuery = (): string => {
-    const parts: string[] = [];
-    if (carType.trim()) parts.push(carType.trim());
-    if (model.trim()) parts.push(`موديل ${model.trim()}`);
-    if (specs.trim()) parts.push(specs.trim());
-    if (color.trim()) parts.push(color.trim());
-
-    let query = parts.join(" ") || "سيارة";
-    if (minPrice || maxPrice) {
-      if (minPrice && maxPrice) {
-        query += ` السعر من ${minPrice} إلى ${maxPrice} ريال`;
-      } else if (minPrice) {
-        query += ` السعر من ${minPrice} ريال`;
-      } else {
-        query += ` السعر حتى ${maxPrice} ريال`;
-      }
-    }
-    return query;
-  };
+  const [stats, setStats] = useState<SearchStats | null>(null);
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setSearched(true);
+    setStats(null);
 
     try {
-      const query = buildQuery();
       const res = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          query,
-          minPrice: minPrice || null,
-          maxPrice: maxPrice || null,
+        body: JSON.stringify({
+          carType: carType.trim() || null,
+          model: model.trim() || null,
+          specs: specs.trim() || null,
+          color: color.trim() || null,
+          minPrice: minPrice ? Number(minPrice) : null,
+          maxPrice: maxPrice ? Number(maxPrice) : null,
         }),
       });
 
       if (!res.ok) {
-        throw new Error("حدث خطأ في البحث. حاولي مرة أخرى.");
+        const errData = await res.json().catch(() => null);
+        throw new Error(
+          errData?.error || "حدث خطأ في البحث. حاولي مرة أخرى."
+        );
       }
 
       const data = await res.json();
       setResults(data.results || []);
+      setStats({
+        totalResults: data.totalResults || data.results?.length || 0,
+        beforeFilter: data.beforeFilter || 0,
+        afterFilter: data.afterFilter || 0,
+        filtersApplied: data.filtersApplied || {
+          price: false,
+          model: false,
+          color: false,
+        },
+      });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "حدث خطأ غير متوقع. حاولي مرة أخرى."
       );
       setResults([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  const buildDisplayQuery = (): string => {
+    const parts: string[] = [];
+    if (carType.trim()) parts.push(carType.trim());
+    if (model.trim()) parts.push(`موديل ${model.trim()}`);
+    if (specs.trim()) parts.push(specs.trim());
+    if (color.trim()) parts.push(color.trim());
+    return parts.join(" ") || "سيارة";
   };
 
   return (
@@ -244,7 +262,8 @@ export default function Home() {
             results={results}
             loading={loading}
             error={error}
-            query={buildQuery()}
+            query={buildDisplayQuery()}
+            stats={stats}
           />
         )}
       </div>
