@@ -11,6 +11,7 @@ interface SearchResult {
 
 export default function Home() {
   const [carType, setCarType] = useState("");
+  const [model, setModel] = useState("");
   const [specs, setSpecs] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -23,6 +24,7 @@ export default function Home() {
   const buildQuery = (): string => {
     const parts: string[] = [];
     if (carType.trim()) parts.push(carType.trim());
+    if (model.trim()) parts.push(`موديل ${model.trim()}`);
     if (specs.trim()) parts.push(specs.trim());
     if (color.trim()) parts.push(color.trim());
 
@@ -109,6 +111,24 @@ export default function Home() {
                 value={carType}
                 onChange={(e) => setCarType(e.target.value)}
                 placeholder='مثال: "كامري"، "لاندكروزر"، "أكسنت"'
+                className="w-full px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
+              />
+            </div>
+
+            {/* Model */}
+            <div>
+              <label
+                htmlFor="model"
+                className="block text-sm font-semibold text-deep-rose mb-2"
+              >
+                📅 الموديل
+              </label>
+              <input
+                id="model"
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder='مثال: "2024"، "2025"'
                 className="w-full px-4 py-3 rounded-2xl border border-muted-light bg-surface text-deep-rose placeholder-muted-rose/60 focus:outline-none focus:ring-2 focus:ring-rose/30 focus:border-rose-light transition-all"
               />
             </div>
