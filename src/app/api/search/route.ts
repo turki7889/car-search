@@ -112,21 +112,27 @@ function buildSiteFilterQuery(parts: string[]): string {
 async function callBraveSearch(query: string): Promise<BraveWebResult[]> {
   const url = `${BRAVE_API_URL}?q=${encodeURIComponent(query)}&count=20`;
 
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": BRAVE_API_KEY,
-    },
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": BRAVE_API_KEY,
+      },
+    });
 
-  if (!res.ok) {
-    console.error(`Brave search failed for query "${query}": ${res.status}`);
-    return [];
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Brave search failed for query "${query}": ${res.status} - ${errorText.substring(0, 200)}`);
+      throw new Error(`Brave API returned ${res.status}: ${errorText.substring(0, 100)}`);
+    }
+
+    const data: BraveSearchResponse = await res.json();
+    return data.web?.results || [];
+  } catch (e) {
+    console.error(`Brave search exception:`, e);
+    throw e;
   }
-
-  const data: BraveSearchResponse = await res.json();
-  return data.web?.results || [];
 }
 
 /** حساب درجة التطابق للنتيجة */
