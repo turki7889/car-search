@@ -287,9 +287,10 @@ export async function POST(request: NextRequest) {
 
     // قبول الحقل القديم query للتوافق مع الإصدارات السابقة
     const legacyQuery = (body.query || "").trim();
-    if (!carType && !legacyQuery) {
+    const hasAnyField = carType || model || specs || color || minPrice || maxPrice || legacyQuery;
+    if (!hasAnyField) {
       return NextResponse.json(
-        { error: "يرجى إدخال نوع السيارة أو كلمات البحث" },
+        { error: "يرجى إدخال كلمات البحث" },
         { status: 400 }
       );
     }
